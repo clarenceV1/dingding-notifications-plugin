@@ -31,6 +31,10 @@ public class DingdingNotifier extends Notifier {
     
     private boolean onAbort;
 
+    private String buildDownloadURL;
+
+    private String noticeContent;
+
     public String getJenkinsURL() {
         return jenkinsURL;
     }
@@ -56,9 +60,14 @@ public class DingdingNotifier extends Notifier {
     public String getAccessToken() {
         return accessToken;
     }
-
+    public String getBuildDownloadURL() {
+        return buildDownloadURL;
+    }
+    public String getNoticeContent() {
+        return noticeContent;
+    }
     @DataBoundConstructor
-    public DingdingNotifier(String accessToken, boolean onStart, boolean onSuccess, boolean onFailed, boolean onAbort, String jenkinsURL) {
+    public DingdingNotifier(String accessToken, boolean onStart, boolean onSuccess, boolean onFailed, boolean onAbort, String jenkinsURL,String buildDownloadURL,String noticeContent) {
         super();
         this.accessToken = accessToken;
         this.onStart = onStart;
@@ -66,10 +75,12 @@ public class DingdingNotifier extends Notifier {
         this.onFailed = onFailed;
         this.onAbort = onAbort;
         this.jenkinsURL = jenkinsURL;
+        this.buildDownloadURL = buildDownloadURL;
+        this.noticeContent = noticeContent;
     }
 
     public DingdingService newDingdingService(AbstractBuild build, TaskListener listener) {
-        return new DingdingServiceImpl(jenkinsURL, accessToken, onStart, onSuccess, onFailed, onAbort, listener, build);
+        return new DingdingServiceImpl(jenkinsURL, buildDownloadURL,noticeContent,accessToken, onStart, onSuccess, onFailed, onAbort, listener, build);
     }
 
     @Override
@@ -99,7 +110,7 @@ public class DingdingNotifier extends Notifier {
 
         @Override
         public String getDisplayName() {
-            return "钉钉通知器配置";
+            return "自定义钉钉通知器";
         }
 
         public String getDefaultURL() {

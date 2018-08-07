@@ -32,6 +32,9 @@ public class DingdingServiceImpl implements DingdingService {
     private boolean onFailed;
 
     private boolean onAbort;
+    private String buildDownloadURL;
+
+    private String noticeContent;
 
     private TaskListener listener;
 
@@ -40,8 +43,9 @@ public class DingdingServiceImpl implements DingdingService {
     private static final String apiUrl = "https://oapi.dingtalk.com/robot/send?access_token=";
 
     private String api;
+    // 打包命令 mvn package -DskipTests
 
-    public DingdingServiceImpl(String jenkinsURL, String token, boolean onStart, boolean onSuccess, boolean onFailed, boolean onAbort, TaskListener listener, AbstractBuild build) {
+    public DingdingServiceImpl(String jenkinsURL, String buildDownloadURL,String noticeContent,String token, boolean onStart, boolean onSuccess, boolean onFailed, boolean onAbort, TaskListener listener, AbstractBuild build) {
         this.jenkinsURL = jenkinsURL;
         this.onStart = onStart;
         this.onSuccess = onSuccess;
@@ -50,6 +54,8 @@ public class DingdingServiceImpl implements DingdingService {
         this.listener = listener;
         this.build = build;
         this.api = apiUrl + token;
+        this.buildDownloadURL = buildDownloadURL;
+        this.noticeContent = noticeContent;
     }
 
     @Override
@@ -76,11 +82,13 @@ public class DingdingServiceImpl implements DingdingService {
 
     @Override
     public void success() {
-        String pic = "http://icons.iconarchive.com/icons/paomedia/small-n-flat/1024/sign-check-icon.png";
+        //二维码图片地址 "https://static.ethte.com/MeetPC/2018_08_07/1814/jenkins222.png";
+        String pic = jenkinsURL;//http://icons.iconarchive.com/icons/paomedia/small-n-flat/1024/sign-check-icon.png";
         String title = String.format("%s%s构建成功", build.getProject().getDisplayName(), build.getDisplayName());
-        String content = String.format("项目[%s%s]构建成功, summary:%s, duration:%s", build.getProject().getDisplayName(), build.getDisplayName(), build.getBuildStatusSummary().message, build.getDurationString());
+        String content = noticeContent;//String.format("项目[%s%s]构建成功, summary:%s, duration:%s", build.getProject().getDisplayName(), build.getDisplayName(), build.getBuildStatusSummary().message, build.getDurationString());
 
-        String link = getBuildUrl();
+        //apk 下载地址 "https://static.ethte.com/app-debug.apk"
+        String link = buildDownloadURL;//getBuildUrl();
         logger.info(link);
         if (onSuccess) {
             logger.info("send link msg from " + listener.toString());
@@ -125,16 +133,23 @@ public class DingdingServiceImpl implements DingdingService {
         PostMethod post = new PostMethod(api);
 
         JSONObject body = new JSONObject();
-        body.put("msgtype", "link");
+        body.put("msgtype", "actionCard");
 
+        JSONObject markdownObject = new JSONObject();
+        markdownObject.put("title", title);
+        markdownObject.put("hideAvatar","0");
+        markdownObject.put("btnOrientation","0");
+        markdownObject.put("singleTitle","下载");
+        markdownObject.put("singleURL",link);
 
-        JSONObject linkObject = new JSONObject();
-        linkObject.put("text", msg);
-        linkObject.put("title", title);
-        linkObject.put("picUrl", pic);
-        linkObject.put("messageUrl", link);
+        StringBuilder text= new StringBuilder();
+        text.append("\n ![screenshot](").append(pic).append(") \n ");
+        text.append("#### ").append(title).append(" \n\n ");
+        text.append("###### ").append(msg).append(" \n\n ");
+        markdownObject.put("text", text);
 
-        body.put("link", linkObject);
+        body.put("actionCard", markdownObject);
+
         try {
             post.setRequestEntity(new StringRequestEntity(body.toJSONString(), "application/json", "UTF-8"));
         } catch (UnsupportedEncodingException e) {
